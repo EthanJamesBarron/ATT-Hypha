@@ -125,6 +125,9 @@ namespace Hypha.Utilities
     [HarmonyPatch(typeof(PrefabManager), nameof(PrefabManager.PrepareSpawnSetups))]
     public static class PrefabWarmupEvent
     {
-        public static void Postfix() => Hypha.InvokePrefabWarmup();
+        public static void Postfix()
+        {
+            Hypha.InvokePrefabWarmup();
+        }
     }
 }

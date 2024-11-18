@@ -1,10 +1,13 @@
 ﻿using Alta.Chunks;
+using Alta.Map;
 using Alta.Networking;
 using Alta.Networking.Servers;
 using Alta.Utilities;
 using HarmonyLib;
 using Hypha.Migration;
+using MelonLoader;
 using System;
+using System.Reflection;
 using UnityEngine;
 
 namespace Hypha.Utilities
@@ -76,4 +79,13 @@ namespace Hypha.Utilities
     {
         public static bool Prefix() => false;
     }
+
+    /*    [HarmonyPatch(typeof(PlayerDataFileHelper<>), MethodType.Constructor)]
+        public static class DataFolderFixer
+        {
+            public static void Postfix(MethodBase __originalMethod)
+            {
+
+            }
+        }*/
 }

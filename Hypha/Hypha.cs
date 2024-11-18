@@ -3,12 +3,16 @@ using Alta.Api.DataTransferModels.Models.Responses;
 using Alta.Api.DataTransferModels.Models.Shared;
 using Alta.Character;
 using Alta.Chunks;
+using Alta.Map;
 using Alta.Networking;
 using Alta.Utilities;
 using CrossGameplayApi;
 using Hypha.Core;
 using Hypha.Helpers;
 using MelonLoader;
+using Mono.Cecil;
+using MonoMod.Cil;
+using MonoMod.RuntimeDetour;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -146,7 +150,9 @@ namespace Hypha
                     Application.Quit();
                 }
                 Vector3 pos = player.PlayerFeetPosition + Vector3.up;
-                SpawnHelper.Spawn(quickItem.Prefab, SpawnData.Default, null, pos, Quaternion.identity);
+                //61362
+                NetworkEntity newEntity = SpawnHelper.SpawnUnchunked(61362, SpawnData.Default);
+                newEntity.transform.position = pos;
             }
         }
 
