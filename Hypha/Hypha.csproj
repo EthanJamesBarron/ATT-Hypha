@@ -75,8 +75,8 @@
     <Reference Include="Alta.Global.Runtime">
       <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\Alta.Global.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="Alta.IO">
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\Alta.IO.dll</HintPath>
+    <Reference Include="Alta.IO-publicized">
+      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\Alta.IO-publicized.dll</HintPath>
     </Reference>
     <Reference Include="Alta.LifecycleManagement.Runtime">
       <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\Alta.LifecycleManagement.Runtime.dll</HintPath>

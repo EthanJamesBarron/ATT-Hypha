@@ -41,6 +41,7 @@ namespace Hypha
         internal string ServerDirectory => Path.Combine(RootDirectory, "Modded Servers");
 
         public static event Action OnPrefabWarmup;
+        public static PlayerDataFileHelper<MapSaveFormat> test;
 
         internal AssetBundle hyphaExampleBundle;
         internal string hashToSpawn;
@@ -53,6 +54,13 @@ namespace Hypha
 
             FetchAllLocalServers();
             ItemAPI.Init();
+
+            test = PlayerDataFileHelper<MapSaveFormat>.Instance;
+
+/*            new Hook(typeof(PlayerDataFileHelper<PlayerSave>).GetMethod("get_DataFolder"), new Action<>(() =>
+            {
+
+            }));*/
 
             foreach (string parameter in Environment.GetCommandLineArgs())
             {

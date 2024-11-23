@@ -56,5 +56,32 @@ namespace Hypha.Migration
             }
             return tcontent;
         }
+
+        public new async Task<TContent> GetContentAsync(int playerIdentifier, Player player = null, bool isCreatingNew = true)
+        {
+            if (getContentTasks.TryGetValue(playerIdentifier, out var value))
+            {
+                await value;
+            }
+            if (!contents.TryGetValue(playerIdentifier, out var content) && isCreatingNew)
+            {
+                content = new TContent();
+                TaskCompletionSource<bool> readTask = new TaskCompletionSource<bool>();
+                getContentTasks.Add(playerIdentifier, readTask.Task);
+                try
+                {
+                    IAltaFile file = await PlayerDataFileHelper<TSaveFormat>.Instance.GetFileAsync(playerIdentifier);
+                    await content.LoadAsync(playerIdentifier, file);
+                    contents[playerIdentifier] = content;
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, ex.ToString());
+                }
+                readTask.SetResult(result: true);
+                getContentTasks.Remove(playerIdentifier);
+            }
+            return content;
+        }
     }
 }

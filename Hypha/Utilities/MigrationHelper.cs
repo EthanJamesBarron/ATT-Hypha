@@ -7,8 +7,13 @@ using HarmonyLib;
 using Hypha.Migration;
 using MelonLoader;
 using System;
+using System.CodeDom;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Hypha.Utilities
 {
@@ -80,12 +85,102 @@ namespace Hypha.Utilities
         public static bool Prefix() => false;
     }
 
-    /*    [HarmonyPatch(typeof(PlayerDataFileHelper<>), MethodType.Constructor)]
-        public static class DataFolderFixer
-        {
-            public static void Postfix(MethodBase __originalMethod)
-            {
+    [HarmonyPatch(typeof(PlayerDataFileHelper<PlayerSave>), "GetAsync")]
+    public static class GetAsyncFixer
+    {
+        private static Dictionary<Type, object> dataFolders = new Dictionary<Type, object>();
 
+        public static bool Prefix(object __instance, ref Task<IAltaFile> __result, string name)
+        {
+            Type T = __instance.GetType().GetGenericArguments()[0];
+            IAltaFolder result = null;
+
+            if (dataFolders.TryGetValue(T, out object dataHelper)) result = dataHelper as IAltaFolder;
+            else
+            {
+                Hypha.Logger.Msg(ConsoleColor.Yellow, "No matching generic type was found in the dataFolders list. Adding one");
+                IAltaFolder newFolder = ModServerHandler.Current.SaveUtility.SaveFolder.GetSubfolder(T.Name);
+                dataFolders.Add(T, newFolder);
+
+                result = newFolder;
+
+                __result = GetAsyncNew(name, result, T);
             }
-        }*/
+
+            return false;
+        }
+
+        private static async Task<IAltaFile> GetAsyncNew(string name, IAltaFolder result, Type T)
+        {
+            AltaFile file = result.GetFile(name) as AltaFile;
+            await AltaFileExtension.ReadAsync(file, T);
+            
+            if (file.content == null) file.content = (IAltaFileFormat)Activator.CreateInstance(T);
+
+            return file;
+        }
+    }
+
+    public static class AltaFileExtension
+    {
+        internal static async Task<object> ReadAsync(this AltaFile file, Type fileFormat)
+        {
+            file.isUnloading = false;
+            object t;
+            if (file.IsReading)
+            {
+                await file.readingTask;
+                t = file.content;
+            }
+            else if (file.content != null && file.content.GetType() == fileFormat) t = file.content;
+            
+            else
+            {
+                if (file.content != null) AltaFile.logger.Error("Invalid format of content. Having to rehandle.");
+
+                file.readingTask = Task.Run(delegate
+                {
+                    ReadingTask(file, fileFormat);
+                });
+
+                Task cached = file.readingTask;
+                await file.readingTask;
+
+                if (file.readingTask == cached) file.readingTask = null;
+                t = file.content;
+            }
+            return t;
+        }
+
+        private static void ReadingTask(this AltaFile file, Type type)
+        {
+            bool flag = false;
+            try
+            {
+                file.fileInfo.Refresh();
+                if (!file.fileInfo.Exists)
+                {
+                    file.content = null;
+                }
+                else
+                {
+                    flag = true;
+                    IAltaFileFormat t = Activator.CreateInstance(type) as IAltaFileFormat;
+                    using (FileStream fileStream = file.fileInfo.OpenRead())
+                    {
+                        t.ReadFrom(file.fileInfo, fileStream);
+                        file.content = t;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AltaFile.logger.Error(ex, "Error while reading. FileName: {0}", new object[] { file.FullName });
+            }
+            finally
+            {
+                if (flag) Profiler.EndThreadProfiling();
+            }
+        }
+    }
 }
