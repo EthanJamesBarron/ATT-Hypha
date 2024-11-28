@@ -9,7 +9,6 @@ using Alta.Utilities;
 using HarmonyLib;
 using Hypha.Core;
 using Hypha.Migration;
-using MelonLoader;
 using NLog;
 using NLog.Internal;
 using Steamworks;

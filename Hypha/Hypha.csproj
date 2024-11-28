@@ -21,7 +21,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel>5</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -33,8 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Alta.Analytics.Runtime">
       <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\Alta.Analytics.Runtime.dll</HintPath>
@@ -132,6 +133,12 @@
     <Reference Include="AltaSocketsNETFramework">
       <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\AltaSocketsNETFramework.dll</HintPath>
     </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\BepInEx\core\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx.Harmony">
+      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\BepInEx\core\BepInEx.Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="CrossGameplayApi, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\CrossGameplayApi.dll</HintPath>
@@ -140,32 +147,32 @@
       <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\A Township Tale_Data\Managed\kcp2k.dll</HintPath>
     </Reference>
     <Reference Include="MelonLoader">
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\MelonLoader.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\MelonLoader.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.IdentityModel.Tokens, Version=6.8.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
     <Reference Include="Mono.Cecil, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\Mono.Cecil.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\Mono.Cecil.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Mdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\Mono.Cecil.Mdb.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\Mono.Cecil.Mdb.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Pdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\Mono.Cecil.Pdb.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\Mono.Cecil.Pdb.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Rocks, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\Mono.Cecil.Rocks.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
     <Reference Include="MonoMod.RuntimeDetour, Version=22.1.29.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\MonoMod.RuntimeDetour.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
     <Reference Include="MonoMod.Utils, Version=22.1.29.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Games\Alta\A Township Tale\MelonLoader\MonoMod.Utils.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\Slightly Newer\A Township Tale\MelonLoader\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.1.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

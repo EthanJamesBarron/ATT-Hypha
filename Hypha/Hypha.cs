@@ -7,19 +7,23 @@ using Alta.Map;
 using Alta.Networking;
 using Alta.Utilities;
 using CrossGameplayApi;
+using HarmonyLib;
 using Hypha.Core;
 using Hypha.Helpers;
 using MelonLoader;
 using Mono.Cecil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
+using MonoMod.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -37,30 +41,31 @@ namespace Hypha
         public static RequestJoinMessage StaticJoinMessage { get; internal set; }
 
         internal List<ModdedServerInfo> collectedServers;
-        internal string RootDirectory => Directory.GetParent(Application.dataPath).FullName;
-        internal string ServerDirectory => Path.Combine(RootDirectory, "Modded Servers");
+        internal static string RootDirectory => Directory.GetParent(Application.dataPath).FullName;
+        internal static string ServerDirectory => Path.Combine(RootDirectory, "Modded Servers");
+        public static List<ModdedServerInfo> moddedServers;
 
         public static event Action OnPrefabWarmup;
-        public static PlayerDataFileHelper<MapSaveFormat> test;
-
-        internal AssetBundle hyphaExampleBundle;
-        internal string hashToSpawn;
-        internal Alta.Inventory.Item quickItem;
 
 
         public override async void OnApplicationStarted()
         {
+            StaticJoinMessage = new();
             Logger ??= LoggerInstance;
 
-            FetchAllLocalServers();
-            ItemAPI.Init();
+            MethodBase listModServers = typeof(ServerBoard).GetMethod("RefreshServersList", BindingFlags.Public | BindingFlags.Instance).GetStateMachineTarget();
 
-            test = PlayerDataFileHelper<MapSaveFormat>.Instance;
-
-/*            new Hook(typeof(PlayerDataFileHelper<PlayerSave>).GetMethod("get_DataFolder"), new Action<>(() =>
+            new ILHook(listModServers, il =>
             {
+                ILCursor ilCursor = new ILCursor(il);
+                ilCursor.GotoNext(MoveType.After,
+                    x => x.MatchCall<Application>("get_isPlaying"));
 
-            }));*/
+                ilCursor.Emit(Mono.Cecil.Cil.OpCodes.Ldloc_1);
+                ilCursor.Emit(Mono.Cecil.Cil.OpCodes.Callvirt, typeof(Hypha).GetMethod(nameof(LoadOnlineServers)));
+            });
+
+            ItemAPI.Init();
 
             foreach (string parameter in Environment.GetCommandLineArgs())
             {
@@ -70,8 +75,6 @@ namespace Hypha
                     break;
                 }
             }
-
-            StaticJoinMessage = new();
 
             IPAddress externalIP = await GetExternalIpAddress();
 
@@ -108,26 +111,48 @@ namespace Hypha
 
         public override void OnLateInitializeMelon()
         {
-            OnPrefabWarmup += () =>
+            if (!CommandLineArguments.Contains("-AlreadyStarted"))
             {
-                if (hyphaExampleBundle == null)
-                {
-                    hyphaExampleBundle = AssetBundle.LoadFromFile(Path.Combine(RootDirectory, "Plugins", "hypha_example"));
-                    GameObject cubeItem = hyphaExampleBundle.LoadAsset<GameObject>("CubeItem");
-                    quickItem = ItemAPI.CreateItem(cubeItem.GetComponent<NetworkPrefab>(), "Cube Item", "Does coems", ItemAPI.ItemRarity.Legendary, 5f);
-                    PrefabManager.AddToPrefabMap(new NetworkPrefab[] { cubeItem.GetComponent<NetworkPrefab>() });
-                }
-            };
+                LaunchNewClientInstance();
+                Application.Quit();
+            }
+
+            if (IsServerInstance)
+            {
+                AltaSceneManager.LoadMainMenuSceneAsync();
+                StartModdedServer(new ModdedServerAccess(), false, false, 1757, true);
+            }
 
             SceneManager.sceneLoaded += (scene, loadMode) =>
             {
                 if (scene.name == "Main Menu")
                 {
-                    if(IsServerInstance) StartModdedServer(new ModdedServerAccess(), false, false, 1757, true);
+                    if (IsServerInstance)
+                    {
+                        StartModdedServer(new ModdedServerAccess(), false, false, 1757, true);
+                        return;
+                    }
+
+                    moddedServers = FetchAllLocalServers();
                 }
             };
         }
 
+        public static void LoadOnlineServers(ServerBoard board)
+        {
+            if (board.type == ServerBoardType.MyServers)
+            {
+                List<GameServerInfo> currentServers = board.lastReceivedServers.ToList();
+
+                for (int i = 0; i < moddedServers.Count; i++)
+                {
+                    Logger.Msg(ConsoleColor.Magenta, "Modded server found! Name is " + moddedServers[i].Name);
+                    currentServers.Add(moddedServers[i]);
+                }
+
+                board.lastReceivedServers = currentServers;
+            }
+        }
 
         public override void OnGUI()
         {
@@ -137,30 +162,14 @@ namespace Hypha
                 LaunchNewServerInstance(access, true, 1757);
             }
 
-            if (GUILayout.Button("Test2"))
-            {
-                VrMainMenu.Instance.JoinServer(TemplateServerInfo);
-            }
-
             if (GUILayout.Button("Serialize test server"))
             {
-                SerializeServer(TemplateServerInfo);
-                Logger.Msg(ConsoleColor.DarkCyan, Environment.CommandLine);
+                TemplateServerInfo.Serialize();
             }
 
-            hashToSpawn = GUILayout.TextField(hashToSpawn);
-
-            if (GUILayout.Button("Spawn cube"))
+            if (GUILayout.Button("Join modded server"))
             {
-                PlayerController player = GameObject.FindObjectOfType<PlayerCharacter>();
-                if (player == null)
-                {
-                    Application.Quit();
-                }
-                Vector3 pos = player.PlayerFeetPosition + Vector3.up;
-                //61362
-                NetworkEntity newEntity = SpawnHelper.SpawnUnchunked(61362, SpawnData.Default);
-                newEntity.transform.position = pos;
+                VrMainMenu.Instance.JoinServer(ServerToHost);
             }
         }
 
@@ -174,25 +183,7 @@ namespace Hypha
 
             for (int i = 0; i < serverDirectories.Length; i++)
             {
-                try
-                {
-                    string contents = File.ReadAllText(serverDirectories[i]);
-                    ModdedServerInfo result = JsonConvert.DeserializeObject<ModdedServerInfo>(contents);
-
-                    if (result == null)
-                    {
-                        Logger.Msg(ConsoleColor.Magenta, "Failed to deserialize svr file " + serverDirectories[i]);
-                        return null;
-                    }
-
-                    temp.Add(result);
-                }
-
-                catch (Exception ex)
-                {
-                    Logger.Msg(ConsoleColor.DarkRed, "Unhandled scenario in FetchAllLocalServers!! " + ex.ToString());
-                    return null;
-                }
+                temp.Add(ModdedServerInfo.Deserialize(serverDirectories[i]));
             }
 
             return temp;
@@ -235,10 +226,16 @@ namespace Hypha
             string logPath = Path.Combine(path2: $"{DateTime.Now:yyyy-MM-dd-HH-mm-ss}" + "_headlessServer.txt", path1: serverSaveUtility.LogsPath);
 
 
-            string cla = CommandLineArguments.RawCommandLine + " $ServerMode " + " /start_server " + access.ServerInfo.Identifier.ToString() + (headless ? " true " : " false") + port + " /console " + " -logFile \"" + logPath + "\"";
+            string cla = CommandLineArguments.RawCommandLine + " $ServerMode " + " /start_server " + access.ServerInfo.Identifier.ToString() + (headless ? " true " : " false") + port + " /console " + " -logFile \"" + logPath + "\"" + " -AlreadyStarted";
             Process.Start(Environment.GetCommandLineArgs()[0], cla);
         }
 
-        internal static void InvokePrefabWarmup() => OnPrefabWarmup.Invoke();
+        internal void LaunchNewClientInstance()
+        {
+            string cla = CommandLineArguments.RawCommandLine;
+            Process.Start(Environment.GetCommandLineArgs()[0], cla + " -AlreadyStarted");
+        }
+
+        internal static void InvokePrefabWarmup() => OnPrefabWarmup?.Invoke();
     }
 }
