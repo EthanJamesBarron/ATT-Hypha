@@ -3,12 +3,9 @@ using Alta.Api.DataTransferModels.Models.Responses;
 using Alta.Map;
 using Alta.Meta.UI;
 using Alta.Networking;
-using Alta.Networking.Scripts.Player;
 using Alta.Networking.Servers;
 using Alta.Utilities;
 using HarmonyLib;
-using Hypha.Core;
-using Hypha.Migration;
 using NLog;
 using NLog.Internal;
 using Steamworks;
@@ -90,78 +87,6 @@ namespace Hypha.Utilities
             {
                 Hypha.Logger.Warning("NLOG TRACE: " + msg);
             }
-        }
-    }
-
-
-    [HarmonyPatch(typeof(GameServerInfoExtensions), nameof(GameServerInfoExtensions.JoinServerAsync))]
-    public static class JoinServerFix
-    {
-        public static bool Prefix(GameServerInfo gameServer, ref Task<ServerJoinResult> __result)
-        {
-            if (gameServer is ModdedServerInfo)
-            {
-                GameServerInfoExtensions.logger.Debug("Joining modded server, skipping API check");
-
-                __result = JoinResultForModdedServer(gameServer as ModdedServerInfo);
-
-                return false;
-            }
-
-            return true;
-        }
-
-        internal static async Task<ServerJoinResult> JoinResultForModdedServer(ModdedServerInfo gameServer)
-        {
-            ServerJoinResult newResult = new()
-            {
-                IsAllowed = true,
-                ConnectionInfo = new()
-                {
-                    Address = IPAddress.Parse(gameServer.IP),
-                    GamePort = gameServer.Port
-                }
-            };
-
-            return newResult;
-        }
-    }
-
-    [HarmonyPatch(typeof(PrefabManager), nameof(PrefabManager.PrepareSpawnSetups))]
-    public static class PrefabWarmupEvent
-    {
-        public static void Postfix()
-        {
-            Hypha.InvokePrefabWarmup();
-        }
-    }
-
-    [HarmonyPatch(typeof(PerPlayerContent<PlayerSave>), "LoadAsync")]
-    public static class PerPlayerLoadAsyncFix
-    {
-        public static async void Prefix(int playerIdentifier, IAltaFile file, IPlayer currentPlayer, object __instance)
-        {
-            Type tSaveFormatGeneric = __instance.GetType().GetGenericArguments()[0];
-            PerPlayerContent<PlayerSave> realInstance = (PerPlayerContent<PlayerSave>)__instance;
-            Hypha.Logger.Msg(ConsoleColor.Magenta, __instance.GetType().GetGenericArguments()[0].Name);
-
-            realInstance.PlayerIdentifier = playerIdentifier;
-            realInstance.File = file;
-            object tSaveFormat = await AltaFileExtension.ReadAsync(file as AltaFile, tSaveFormatGeneric);
-            realInstance.Content = tSaveFormat as PlayerSave;
-            ModServerHandler.Current.PlayerJoined += realInstance.PlayerJoined;
-            if (currentPlayer == null)
-            {
-                foreach (Player player in Player.AllPlayers)
-                {
-                    if (player.UserInfo.Identifier == playerIdentifier)
-                    {
-                        currentPlayer = player;
-                        break;
-                    }
-                }
-            }
-            realInstance.TargetPlayer = currentPlayer;
         }
     }
 }
